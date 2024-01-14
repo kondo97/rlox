@@ -3,7 +3,8 @@ require_relative 'token'
 require_relative 'token_type'
 
 class AstPrinter
-  def main
+  # this method is sample, so it's not used
+  def sample
     # (- 123)
     unary = Expr::Unary.new(
       Token.new(TokenType::MINUS, '-', nil, 1),
@@ -57,5 +58,3 @@ class AstPrinter
     str + ')'
   end
 end
-
-AstPrinter.new.main

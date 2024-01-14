@@ -1,10 +1,18 @@
 # frozen_string_literal: true
 
 require_relative 'scanner'
+require_relative 'parser'
+require_relative 'ast_printer'
+require_relative 'token_type'
 # root file for the lox-ruby interpreter
 # Usage1(run file): ruby lox.rb [path]
 # Usage2(run prompt): ruby lox.rb
 class Lox
+  attr_accessor :has_error
+  def initialize
+    @has_error = false
+  end
+
   def main(args)
     if args.length > 1
       puts 'Usage: rlox [script]'
@@ -16,8 +24,12 @@ class Lox
     end
   end
 
-  def self.error(line, message)
-    report(line, '', message)
+  def self.error(token, message)
+    if token.type == :EOF
+      report(token.line, ' at end', message)
+    else
+      report(token.line, " at '#{token.lexeme}'", message)
+    end
   end
 
   def self.report(line, where, message)
@@ -44,14 +56,20 @@ class Lox
   end
 
   def run(source)
-    loop do
-      scanner = Scanner.new(source)
-      tokens = scanner.scan_tokens
-      tokens.each do |token|
-        puts token.to_str
-      end
-      break
-    end
+    scanner = Scanner.new(source)
+    # ex. when source is "1 + 2"...tokens is
+    # [#<Token:0x00000001003994e0 @type=:NUMBER, @lexeme="1", @literal=1.0, @line=1>,
+    # #<Token:0x0000000100399490 @type=:EQUAL, @lexeme="=", @literal=nil, @line=1>,
+    # #<Token:0x00000001003993f0 @type=:NUMBER, @lexeme="2", @literal=2.0, @line=1>,
+    # #<Token:0x00000001003993a0 @type=:EOF, @lexeme="", @literal=nil, @line=1>]
+    tokens = scanner.scan_tokens
+
+    parser = Parser.new(tokens)
+    expression = parser.parse
+
+    return if has_error
+
+    puts AstPrinter.new.print_expr(expression)
   end
 end
 
