@@ -1,2 +1,0 @@
-ands = 'and'
-puts ands
