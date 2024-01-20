@@ -155,9 +155,10 @@ class Scanner
   end
 
   def identifier
+    advance while is_alpha_numeric(peek)
     text = @source[@start...@current]
     type = KEYWORDS[text.to_sym] || IDENTIFIER
-    add_token(type)
+    add_tokens(type, nil)
   end
 
   def is_alpha(c)

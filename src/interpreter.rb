@@ -6,8 +6,9 @@ class Interpreter
   include TokenType
 
   def interpret(statements)
-    value = evaluate(statements)
-    print stringify(value)
+    statements.each do |statement|
+      execute(statement)
+    end
   rescue RuntimeError => e
     Lox.runtime_error(e)
   end
@@ -31,12 +32,13 @@ class Interpreter
   def check_number_operand(operator, operand)
     return if operand.is_a?(Numeric)
 
-    raise LoxRuntimeError.new(operator, "Operand must be a number.")
+    raise LoxRuntimeError.new(operator, 'Operand must be a number.')
   end
 
   def check_number_operands(operator, left, right)
     return if left.is_a?(Numeric) && right.is_a?(Numeric)
-    raise LoxRuntimeError.new(operator, "Operands must be numbers.")
+
+    raise LoxRuntimeError.new(operator, 'Operands must be numbers.')
   end
 
   def truthy?(object)
@@ -72,11 +74,11 @@ class Interpreter
       left - right
     when PLUS
       if left.is_a?(Numeric) && right.is_a?(Numeric)
-      left + right
+        left + right
       elsif left.is_a?(String) && right.is_a?(String)
-      left + right
+        left + right
       else
-      raise RuntimeError.new(expr.operator, "Operands must be two numbers or two strings.")
+        raise RuntimeError.new(expr.operator, 'Operands must be two numbers or two strings.')
       end
     when SLASH
       check_number_operands(expr.operator, left, right)
@@ -93,6 +95,21 @@ class Interpreter
 
   def evaluate(expr)
     expr.accept(self)
+  end
+
+  def execute(stmt)
+    stmt.accept(self)
+  end
+
+  def visit_expression_stmt(stmt)
+    evaluate(stmt.expression)
+    nil
+  end
+
+  def visit_print_stmt(stmt)
+    value = evaluate(stmt.expression)
+    print stringify(value)
+    nil
   end
 
   def equal?(a, b)

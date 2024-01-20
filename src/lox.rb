@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'scanner'
-require_relative 'parser'
+require_relative './parser/index'
 require_relative 'ast_printer'
 require_relative 'token_type'
 require_relative 'interpreter'
@@ -73,14 +73,15 @@ class Lox
     # #<Token:0x00000001003993f0 @type=:NUMBER, @lexeme="2", @literal=2.0, @line=1>,
     # #<Token:0x00000001003993a0 @type=:EOF, @lexeme="", @literal=nil, @line=1>]
     tokens = scanner.scan_tokens
+    puts "tokens is #{tokens}"
 
     parser = Parser.new(tokens)
-    expression = parser.parse
+    statements = parser.parse
     # ex. when expression is (1 + 2) * 3...expression is
     # #<Expr::Binary:0x00000001003a0b50
 
     # 9.0
-    @interpreter.interpret(expression)
+    @interpreter.interpret(statements)
 
     # (* (group (+ 1.0 2.0)) 3.0)
     puts AstPrinter.new.print_expr(expression)
