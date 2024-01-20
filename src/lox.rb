@@ -4,13 +4,17 @@ require_relative 'scanner'
 require_relative 'parser'
 require_relative 'ast_printer'
 require_relative 'token_type'
+require_relative 'interpreter'
 # root file for the lox-ruby interpreter
 # Usage1(run file): ruby lox.rb [path]
 # Usage2(run prompt): ruby lox.rb
 class Lox
   attr_accessor :has_error
+
   def initialize
     @has_error = false
+    has_runtime_error = false
+    @interpreter = Interpreter.new
   end
 
   def main(args)
@@ -32,6 +36,11 @@ class Lox
     end
   end
 
+  def self.runtime_error(error)
+    puts "#{error.message}\n[line #{error.token.line}]"
+    had_runtime_error = true
+  end
+
   def self.report(line, where, message)
     puts "[line #{line}] Error #{where}: #{message}"
   end
@@ -42,6 +51,7 @@ class Lox
     source = File.open(path).read
     run(source)
     exit(65) if has_error
+    exit(70) if has_runtime_error
   end
 
   def run_prompt
@@ -66,9 +76,13 @@ class Lox
 
     parser = Parser.new(tokens)
     expression = parser.parse
+    # ex. when expression is (1 + 2) * 3...expression is
+    # #<Expr::Binary:0x00000001003a0b50
 
-    return if has_error
+    # 9.0
+    @interpreter.interpret(expression)
 
+    # (* (group (+ 1.0 2.0)) 3.0)
     puts AstPrinter.new.print_expr(expression)
   end
 end

@@ -1,3 +1,6 @@
+require_relative 'ast_printer'
+require_relative 'interpreter'
+
 class Expr
   module Visitor
     def accept(visitor)

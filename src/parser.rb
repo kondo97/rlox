@@ -41,7 +41,7 @@ class Parser
     false
   end
 
-  def cousume(type, message)
+  def consume(type, message)
     return advance if check(type)
 
     error(peek, message)
