@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'scanner'
+require_relative './scanner/index'
 require_relative './parser/index'
 require_relative 'ast_printer'
 require_relative 'token_type'

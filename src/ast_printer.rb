@@ -1,4 +1,4 @@
-require_relative 'expr'
+require_relative './expr/index'
 require_relative 'token'
 require_relative 'token_type'
 
