@@ -9,6 +9,18 @@ class Stmt
     end
   end
 
+  def Class
+    def initialize(name, superclass, methods)
+      @name = name
+      @superclass = superclass
+      @methods = methods
+    end
+
+    def accept(visitor)
+      visitor.visit_class_stmt(self)
+    end
+  end
+
   class Expression
     def initialize(expr)
       @expr = expr

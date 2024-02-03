@@ -1,28 +1,29 @@
 # frozen_string_literal: true
-
+#
 require_relative './scanner/index'
 require_relative './parser/index'
-require_relative 'ast_printer'
+require_relative './ast_printer/index'
 require_relative 'token_type'
-require_relative 'interpreter'
-# root file for the lox-ruby interpreter
-# Usage1(run file): ruby lox.rb [path]
-# Usage2(run prompt): ruby lox.rb
+require_relative './interpreter/index'
+
 class Lox
-  attr_accessor :has_error
+  attr_accessor :had_error, :had_runtime_error, :interpreter
 
   def initialize
-    @has_error = false
-    has_runtime_error = false
+    @had_error = false
+    @had_runtime_error = false
     @interpreter = Interpreter.new
   end
 
   def main(args)
+    # 引数がない場合はエラー
     if args.length > 1
       puts 'Usage: rlox [script]'
       exit 64
+    # 引数が1つの場合はスクリプトファイルが指定されたと解釈する
     elsif args.length == 1
       run_file(args[0])
+    # 引数が2つ以上の場合はプロンプトを起動する
     else
       run_prompt
     end
@@ -38,11 +39,12 @@ class Lox
 
   def self.runtime_error(error)
     puts "#{error.message}\n[line #{error.token.line}]"
-    had_runtime_error = true
+    @had_runtime_error = true
   end
 
   def self.report(line, where, message)
     puts "[line #{line}] Error #{where}: #{message}"
+    @had_error = true
   end
 
   private
@@ -50,41 +52,54 @@ class Lox
   def run_file(path)
     source = File.open(path).read
     run(source)
-    exit(65) if has_error
-    exit(70) if has_runtime_error
+    exit(65) if @had_error
+    exit(70) if @has_runtime_error
   end
 
   def run_prompt
     print '> '
     loop do
+      # getsメソッドはターミナルをコマンド入力待ちの状態にする
       line = gets.chomp
       break if line.nil?
 
       run(line)
-      false
+      @had_error = false
     end
   end
 
   def run(source)
-    scanner = Scanner.new(source)
-    # ex. when source is "1 + 2"...tokens is
+    # ソースからトークンの配列を生成する
+    # ex. 例えばソースが "1 + 2"の場合、トークンの配列は下記のようになる
     # [#<Token:0x00000001003994e0 @type=:NUMBER, @lexeme="1", @literal=1.0, @line=1>,
     # #<Token:0x0000000100399490 @type=:EQUAL, @lexeme="=", @literal=nil, @line=1>,
     # #<Token:0x00000001003993f0 @type=:NUMBER, @lexeme="2", @literal=2.0, @line=1>,
     # #<Token:0x00000001003993a0 @type=:EOF, @lexeme="", @literal=nil, @line=1>]
+    scanner = Scanner.new(source)
     tokens = scanner.scan_tokens
-    puts "tokens is #{tokens}"
 
+    # トークンの配列からASTを生成する
+    # ex. 例えばASTは下記のようになる
+    # [
+    # <Stmt::Print:0x000000010492eff0 @expr=#<Expr::Literal:0x0000000104960938 @value="one">>,
+    # <Stmt::Print:0x000000010492e4b0 @expr=#<Expr::Literal:0x000000010492e870 @value=true>>,
+    # <Stmt::Print:0x000000010492cb60
+    #  @expr=#<Expr::Binary:0x000000010492ce30 @left=#<Expr::Literal:0x000000010492dda8 @value=2.0>,
+    #  @operator=#<Token:0x00000001075483e8 @type=:PLUS, @lexeme="+", @literal=nil, @line=3>,
+    #  @right=#<Expr::Literal:0x000000010492d510 @value=1.0>>>
+    # ]
     parser = Parser.new(tokens)
     statements = parser.parse
-    # ex. when expression is (1 + 2) * 3...expression is
-    # #<Expr::Binary:0x00000001003a0b50
+
+    return if @had_error
+
+    resolver = Resolver.new(@interpreter)
+    resolver.resolve(statements)
+
+    return if @had_error
 
     # 9.0
     @interpreter.interpret(statements)
-
-    # (* (group (+ 1.0 2.0)) 3.0)
-    puts AstPrinter.new.print_expr(expression)
   end
 end
 
